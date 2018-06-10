@@ -4,20 +4,20 @@
 ## AnyKernel setup
 # begin properties
 properties() { '
-kernel.string=DirtyV by bsmitty83 @ xda-developers
+kernel.string=AK2 version of no-verity-opt-encrypt by kykint
 do.devicecheck=1
 do.modules=0
 do.cleanup=1
 do.cleanuponabort=0
-device.name1=maguro
-device.name2=toro
-device.name3=toroplus
+device.name1=starlte
+device.name2=star2lte
+device.name3=
 device.name4=
 device.name5=
 '; } # end properties
 
 # shell variables
-block=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;
+block=/dev/block/platform/11120000.ufs/by-name/BOOT;
 is_slot_device=0;
 ramdisk_compression=auto;
 
@@ -38,24 +38,23 @@ dump_boot;
 
 # begin ramdisk changes
 
-# init.rc
-backup_file init.rc;
-replace_string init.rc "cpuctl cpu,timer_slack" "mount cgroup none /dev/cpuctl cpu" "mount cgroup none /dev/cpuctl cpu,timer_slack";
-append_file init.rc "run-parts" init;
+# fstab.samsungexynos9810
+patch_fstab fstab.samsungexynos9810 /system ext4 flags ",verify" "";
+patch_fstab fstab.samsungexynos9810 /cache ext4 flags ",verify" "";
+patch_fstab fstab.samsungexynos9810 /data ext4 flags ",verify" "";
+patch_fstab fstab.samsungexynos9810 /system ext4 flags ",support_scfs" "";
+patch_fstab fstab.samsungexynos9810 /cache ext4 flags ",support_scfs" "";
+patch_fstab fstab.samsungexynos9810 /data ext4 flags ",support_scfs" "";
+patch_fstab fstab.samsungexynos9810 /data ext4 flags "forceencrypt=" "encryptable=";
+patch_fstab fstab.samsungexynos9810 /data ext4 flags "forcefdeorfbe=" "encryptable=";
 
-# init.tuna.rc
-backup_file init.tuna.rc;
-insert_line init.tuna.rc "nodiratime barrier=0" after "mount_all /fstab.tuna" "\tmount ext4 /dev/block/platform/omap/omap_hsmmc.0/by-name/userdata /data remount nosuid nodev noatime nodiratime barrier=0";
-append_file init.tuna.rc "dvbootscript" init.tuna;
-
-# fstab.tuna
-backup_file fstab.tuna;
-patch_fstab fstab.tuna /system ext4 options "noatime,barrier=1" "noatime,nodiratime,barrier=0";
-patch_fstab fstab.tuna /cache ext4 options "barrier=1" "barrier=0,nomblk_io_submit";
-patch_fstab fstab.tuna /data ext4 options "data=ordered" "nomblk_io_submit,data=writeback";
-append_file fstab.tuna "usbdisk" fstab;
+# default.prop
+patch_prop default.prop ro.config.dmverity false;
 
 # end ramdisk changes
+
+# patch dtb
+$bin/dtb_patch $split_img/boot.img-dtb;
 
 write_boot;
 
